@@ -1,0 +1,332 @@
+<html>
+<canvas id="gameCanvas" width="1440" height="1080" style='height:100%;width:100%'></canvas>
+<body style='margin:0px;'>
+<script>
+class Asteroid {
+	constructor(x,y,r) {
+		this.x=x;
+		this.y=y;
+		this.r=r;
+		this.xSpeed=random(-1,1,false);
+		this.ySpeed=random(-1,1,false);
+	}
+	move(xMax,yMax) {
+		this.x+=this.xSpeed;
+		this.y+=this.ySpeed;
+		if(this.x>xMax+this.r) {
+		this.x=0;
+		} else if(this.x<0-this.r) {
+		this.x=xMax;
+		}
+		if(this.y>yMax+this.r) {
+		this.y=0
+		} else if(this.y<0-this.r){
+		this.y=yMax;
+		}
+	}
+	show() {
+		ctx.lineWidth='1'
+		ctx.strokeStyle='red'
+		ctx.beginPath();
+		ctx.arc(this.x,this.y,this.r,0,2*Math.PI);
+		ctx.stroke();
+	}
+	split() {
+		var newA = [];
+		newA[0] = new Asteroid(this.x-10,this.y-10,this.r/1.6);
+		newA[1] = new Asteroid(this.x+10,this.y+10,this.r/1.6)
+		return newA;
+	}
+}
+
+class Enemy {
+	constructor(){
+		this.x=0
+		this.y=random(0,c.height)
+		this.r = 20;
+		this.xSpeed=1;
+		this.ySpeed=1;
+	}
+	move(xMax,yMax) {
+		this.x+=this.xSpeed;
+		this.y+=this.ySpeed;
+		if(this.x>xMax+this.r-3) {
+		this.x=0-this.r+3;
+		} else if(this.x<0-this.r+3) {
+		this.x=xMax+this.r-3;
+		}
+		if(this.y>yMax+this.r-3) {
+		this.y=0-this.r+3;
+		} else if(this.y<0-this.r+3){
+		this.y=yMax+this.r-3;
+		}
+	}
+	show() {
+		ctx.strokeStyle='rgb(255,255,0)';
+		ctx.lineWidth='4'
+		ctx.strokeRect(this.x,this.y,this.r,this.r)
+	}
+}
+
+class Bullet {
+	constructor(x,y,angle,destinationX,destinationY) {
+		this.x=x;
+		this.y=y;
+		this.journey=0;
+		this.alpha = 1;
+		this.angle=angle;
+		this.destinationX=Math.round(destinationX);
+		this.destinationY=Math.round(destinationY);
+		if(this.angle!=null){
+		this.yVel=9*Math.sin(this.angle*(Math.PI/180));
+		this.xVel=9*Math.cos(this.angle*(Math.PI/180));
+		}else{
+		this.yVel=this.destinationY-this.y;
+		this.xVel=this.destinationX-this.x;
+		this.iterations=0;
+		if(Math.abs(this.xVel)>=Math.abs(this.yVel)){
+			while(Math.abs(this.xVel)>10){
+				this.iterations++;
+				this.xVel/=10
+			}
+			console.log(this.iterations)
+			this.yVel/=Math.pow(10,this.iterations)
+		}else{
+			while(Math.abs(this.yVel)>10){
+				this.iterations++;
+				this.yVel/=10
+			}
+			console.log(this.iterations)
+			this.xVel/=Math.pow(10,this.iterations)
+		}
+		console.log(this.xVel+" Xvel yVel "+this.yVel)
+		}
+	}
+	move(xMax,yMax) {
+		this.x+=this.xVel;
+		this.y+=this.yVel;
+		if(this.x>xMax+3) {
+		this.x=0;
+		} else if(this.x<0-3) {
+		this.x=xMax;
+		}
+		if(this.y>yMax+3) {
+		this.y=0
+		} else if(this.y<0-3){
+		this.y=yMax;
+		}
+		this.journey+=Math.abs(this.yVel)+Math.abs(this.xVel)
+	}
+	show() {
+		ctx.fillStyle='rgba(0,255,0,'+this.alpha+')'
+		ctx.fillRect(this.x,this.y,3,3)
+	}
+}
+var c = document.getElementById('gameCanvas')
+var ctx = c.getContext('2d')
+var playerX=100;
+var playerY=100;
+var playerXVel=0;
+var playerYVel=0;
+var angle=0;
+var bullet=[];
+var keys = {39:false,37:false,38:false,32:false}
+var isFireHeld = false;
+var astr = [];
+var startAsteroids=4;
+var score=0;
+var displayscore=score;
+var level = 0;
+var frames = 0;
+var enemy = null;
+var enemyBullet=null;
+var enemyShot=false;
+var dead=false;
+
+ctx.fillStyle= 'black'
+ctx.fillRect(0,0,c.width,c.height);
+window.onload = function() {
+	//window.addEventListener('keydown', keyPressed)
+	//astr[0] = new Asteroid(random(0,c.width),random(0,c.height));
+	for(let i=0;i<startAsteroids;i++)
+	astr[i] = new Asteroid(random(0,c.width),random(0,c.height),32);
+	update();
+}
+function rotate() {
+	ctx.save();
+	ctx.translate(playerX,playerY);
+	ctx.rotate(angle*(Math.PI/180));
+	ctx.translate(0-playerX,0-playerY);
+	drawPlayer();
+	ctx.restore();
+
+}
+function nextLevel() {
+	if(astr.length==0){
+		level++;
+		startAsteroids=Math.floor(startAsteroids*=1.5-(level%7/10))
+		for(let i=0;i<startAsteroids;i++)
+			astr[i] = new Asteroid(random(0,c.width),random(0,c.height),32);
+		for(let i=0;i<startAsteroids;i++) {
+			if(Math.sqrt(Math.pow(astr[i].x-playerX,2)+Math.pow(astr[i].y-playerY,2))<astr[i].r+40) {
+				astr[i] = new Asteroid(random(0,c.width),random(0,c.height),32)
+			}
+		}
+	}
+}
+function drawPlayer() {
+	ctx.strokeStyle='orange'
+	ctx.lineWidth='4'
+	ctx.beginPath();
+	ctx.moveTo(playerX,playerY);
+	ctx.lineTo(playerX-24,playerY-8);
+	ctx.lineTo(playerX-24,playerY+8);
+	ctx.closePath();
+	ctx.stroke()
+	ctx.fillStyle='rgb(255,100,0)'
+	ctx.fillRect(playerX-24,playerY-5,10,10)
+}
+function keyPresses() {
+	document.body.onkeydown = document.body.onkeyup = function(e){
+		keys[e.keyCode] = e.type == 'keydown';
+	}
+		if(keys[39]) {
+			angle+=3;
+		} if(keys[37]) {
+			angle-=3;
+		}
+		if(keys[38]){
+		if(playerXVel*playerXVel+playerYVel*playerYVel<20*20) {
+				playerXVel+=0.08*Math.cos(angle*(Math.PI/180))
+				playerYVel+=0.08*Math.sin(angle*(Math.PI/180))
+			}
+		}
+		if(keys[32]&&!isFireheld) {
+			bullet.push(new Bullet(playerX,playerY,angle));
+			isFireheld=true;
+		} else if(!keys[32]) {
+			isFireheld=false;
+		}
+}
+function movePlayer() {
+	playerX+=playerXVel
+	playerY+=playerYVel
+	if(playerX>c.width+20) {
+		playerX=0;
+	} else if(playerX<0-20) {
+		playerX=c.width;
+	}
+	if(playerY>c.height+20) {
+		playerY=0
+	} else if(playerY<0-20){
+		playerY=c.height;
+	}
+	if(Math.abs(playerXVel)>0.02||Math.abs(playerYVel)>0.02) {
+	playerXVel*=0.99;
+	playerYVel*=0.99;
+	} else {
+		playerXVel=0;
+		playerYVel=0;
+	}
+}
+function drawStats() {
+ctx.font='40px Impact';
+ctx.fillStyle='white';
+if(displayscore<score){
+	displayscore+=10;
+}
+ctx.fillText(displayscore,10,35)
+ctx.fillText("Level: "+level,10,70)
+}
+function handleEnemy() {
+	if(enemy!=null){
+	if(frames%240==0){
+		enemy.xSpeed=random(-1,1);
+		enemy.ySpeed=random(-1,1);
+		enemyShot=true;
+	}
+	if(enemyShot){
+		if(enemyBullet==null){
+			enemyBullet = new Bullet(enemy.x,enemy.y,null,playerX,playerY)
+		}
+	enemyBullet.move(c.width,c.height);
+	enemyBullet.show()
+	enemyBullet.alpha=1-(0.001*enemyBullet.journey);
+	if(enemyBullet.journey>c.width-50) {
+		enemyBullet=null;
+		enemyShot=false;
+	} else if(Math.abs(enemyBullet.x-playerX)<4&&Math.abs(enemyBullet.y-playerY)<4){
+		dead=true;
+	}
+	}
+	enemy.move(c.width,c.height);
+	enemy.show();
+	}else if(frames%1000==0){
+		enemy = new Enemy();
+	}
+}
+function update() {
+	frames++;
+	ctx.fillStyle= 'black'
+	ctx.fillRect(0,0,c.width,c.height);
+	drawStats();
+	rotate();
+	keyPresses();
+	movePlayer();
+	nextLevel();
+	for(let i=0;i<astr.length;i++) {
+		astr[i].move(c.width,c.height);
+		astr[i].show();
+		if(Math.sqrt(Math.pow(astr[i].x-playerX,2)+Math.pow(astr[i].y-playerY,2))<astr[i].r){
+			dead=true;
+		}
+	}
+	handleEnemy();
+	for(let j=0;j<bullet.length;j++) {
+	bullet[j].move(c.width,c.height);
+	bullet[j].show();
+	bullet[j].alpha=1-(0.001*bullet[j].journey);
+	if(bullet[j].journey>c.width-50) {
+		bullet.splice(j,1)
+		break;
+	}
+	if(enemy!=null){
+	if(Math.sqrt(Math.pow(bullet[j].x-enemy.x,2)+Math.pow(bullet[j].y-enemy.y,2))<enemy.r){
+		enemy=null;
+	}
+	}
+	for(let i=0;i<astr.length;i++) {
+		if(Math.sqrt(Math.pow(astr[i].x-bullet[j].x,2)+Math.pow(astr[i].y-bullet[j].y,2))<astr[i].r) {
+			if(astr[i].r>12.5) {
+			var newAsteroids = astr[i].split()
+			astr = astr.concat(newAsteroids)
+			}
+			bullet.splice(j,1)
+			astr.splice(i,1)
+			score+=100
+			break;
+		}
+	}
+	}
+	if(!dead){
+	window.requestAnimationFrame(update);
+	}else{
+	ctx.fillStyle='black';
+	ctx.fillRect(0,0,c.width,c.height)
+	ctx.fillStyle='white'
+	ctx.font="50px Impact";
+	ctx.fillText("GAME OVER",c.width/2-100,c.height/2-10)
+	}
+}
+
+function random(min,max,round) {
+	if(round==null||round){
+	this.value = Math.round(Math.random()*(max-min))+min;
+	}else{
+	this.value = Math.random()*(max-min)+min;
+	}
+	return this.value;
+}
+</script>
+</canvas>
+</html>
