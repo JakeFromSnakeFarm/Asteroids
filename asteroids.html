@@ -9,6 +9,13 @@ class Asteroid {
 		this.r=r;
 		this.xSpeed=random(-1,1,false);
 		this.ySpeed=random(-1,1,false);
+		if(Math.random()<=0.33){
+		this.strokeStyle='rgb(211,211,211)'
+		}else if(Math.random()>0.33&&Math.random()<=0.66){
+		this.strokeStyle='rgb(192,192,192)'
+		}else{
+		this.strokeStyle='rgb(169,169,169)'
+		}
 	}
 	move(xMax,yMax) {
 		this.x+=this.xSpeed;
@@ -25,8 +32,8 @@ class Asteroid {
 		}
 	}
 	show() {
-		ctx.lineWidth='1'
-		ctx.strokeStyle='red'
+		ctx.lineWidth='3';
+		ctx.strokeStyle=this.strokeStyle;
 		ctx.beginPath();
 		ctx.arc(this.x,this.y,this.r,0,2*Math.PI);
 		ctx.stroke();
@@ -78,9 +85,11 @@ class Bullet {
 		this.destinationX=Math.round(destinationX);
 		this.destinationY=Math.round(destinationY);
 		if(this.angle!=null){
+		this.fillStyle='rgba(0,255,0,'+this.alpha+')'
 		this.yVel=9*Math.sin(this.angle*(Math.PI/180));
 		this.xVel=9*Math.cos(this.angle*(Math.PI/180));
 		}else{
+		this.fillStyle='rgba(255,0,0,'+this.alpha+')'
 		this.yVel=this.destinationY-this.y;
 		this.xVel=this.destinationX-this.x;
 		this.iterations=0;
@@ -118,7 +127,7 @@ class Bullet {
 		this.journey+=Math.abs(this.yVel)+Math.abs(this.xVel)
 	}
 	show() {
-		ctx.fillStyle='rgba(0,255,0,'+this.alpha+')'
+		ctx.fillStyle=this.fillStyle
 		ctx.fillRect(this.x,this.y,3,3)
 	}
 }
