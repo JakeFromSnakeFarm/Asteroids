@@ -85,11 +85,11 @@ class Bullet {
 		this.destinationX=Math.round(destinationX);
 		this.destinationY=Math.round(destinationY);
 		if(this.angle!=null){
-		this.fillStyle='rgba(0,255,0,'+this.alpha+')'
+		this.rgbTag='rgba(0,255,0,';
 		this.yVel=9*Math.sin(this.angle*(Math.PI/180));
 		this.xVel=9*Math.cos(this.angle*(Math.PI/180));
 		}else{
-		this.fillStyle='rgba(255,0,0,'+this.alpha+')'
+		this.rgbTag='rgba(255,0,0,';
 		this.yVel=this.destinationY-this.y;
 		this.xVel=this.destinationX-this.x;
 		this.iterations=0;
@@ -124,9 +124,11 @@ class Bullet {
 		} else if(this.y<0-3){
 		this.y=yMax;
 		}
-		this.journey+=Math.abs(this.yVel)+Math.abs(this.xVel)
+		this.journey+=Math.abs(this.yVel)/10+Math.abs(this.xVel)/10
 	}
 	show() {
+		this.alpha-=this.journey/10000;
+		this.fillStyle=this.rgbTag+this.alpha+')';
 		ctx.fillStyle=this.fillStyle
 		ctx.fillRect(this.x,this.y,3,3)
 	}
@@ -157,6 +159,8 @@ ctx.fillRect(0,0,c.width,c.height);
 window.onload = function() {
 	//window.addEventListener('keydown', keyPressed)
 	//astr[0] = new Asteroid(random(0,c.width),random(0,c.height));
+	ctx.canvas.width = window.innerWidth;
+	ctx.canvas.height = window.innerHeight;
 	for(let i=0;i<startAsteroids;i++)
 	astr[i] = new Asteroid(random(0,c.width),random(0,c.height),32);
 	update();
@@ -258,20 +262,21 @@ function handleEnemy() {
 		if(enemyBullet==null){
 			enemyBullet = new Bullet(enemy.x,enemy.y,null,playerX,playerY)
 		}
-	enemyBullet.move(c.width,c.height);
-	enemyBullet.show()
-	enemyBullet.alpha=1-(0.001*enemyBullet.journey);
-	if(enemyBullet.journey>c.width-50) {
-		enemyBullet=null;
-		enemyShot=false;
-	} else if(Math.abs(enemyBullet.x-playerX)<4&&Math.abs(enemyBullet.y-playerY)<4){
-		dead=true;
-	}
 	}
 	enemy.move(c.width,c.height);
 	enemy.show();
 	}else if(frames%1000==0){
 		enemy = new Enemy();
+	}
+	if(enemyBullet!=null){
+	enemyBullet.move(c.width,c.height);
+	enemyBullet.show()
+	if(enemyBullet.alpha<0.08) {
+		enemyBullet=null;
+		enemyShot=false;
+	} else if(Math.abs(enemyBullet.x-playerX)<4&&Math.abs(enemyBullet.y-playerY)<4){
+		dead=true;
+	}
 	}
 }
 function update() {
@@ -294,8 +299,7 @@ function update() {
 	for(let j=0;j<bullet.length;j++) {
 	bullet[j].move(c.width,c.height);
 	bullet[j].show();
-	bullet[j].alpha=1-(0.001*bullet[j].journey);
-	if(bullet[j].journey>c.width-50) {
+	if(bullet[j].alpha<0.08) {
 		bullet.splice(j,1)
 		break;
 	}
