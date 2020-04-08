@@ -215,6 +215,7 @@ function keyPresses() {
 			}
 		}
 		if(keys[32]&&!isFireheld) {
+			if(bullet.length<5)
 			bullet.push(new Bullet(playerX,playerY,angle));
 			isFireheld=true;
 		} else if(!keys[32]) {
@@ -291,12 +292,14 @@ function update() {
 	for(let i=0;i<astr.length;i++) {
 		astr[i].move(c.width,c.height);
 		astr[i].show();
-		if(Math.sqrt(Math.pow(astr[i].x-playerX,2)+Math.pow(astr[i].y-playerY,2))<astr[i].r){
+		console.log(Math.sqrt(Math.pow(astr[i].x-playerX-24,2)+Math.pow(astr[i].y-playerY,2))+" "+astr[i].r)
+		if(Math.sqrt(Math.pow(astr[i].x-playerX,2)+Math.pow(astr[i].y-playerY,2))<astr[i].r||Math.sqrt(Math.pow(astr[i].x-playerX-24,2)+Math.pow(astr[i].y-playerY,2))<astr[i].r){
 			dead=true;
 		}
 	}
 	handleEnemy();
 	for(let j=0;j<bullet.length;j++) {
+	if(bullet.length<=5){
 	bullet[j].move(c.width,c.height);
 	bullet[j].show();
 	if(bullet[j].alpha<0.08) {
@@ -319,6 +322,7 @@ function update() {
 			score+=100
 			break;
 		}
+	}
 	}
 	}
 	if(!dead){
